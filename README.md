@@ -5,6 +5,7 @@ WASM runtime.
 
 ## Reproduction Steps
 
+### Setup
 1. Set up a cluster on Redpanda with SASL/SCRAM and SSL
 2. Create a user with a SASL Mechanism of SCRAM-SHA-256
 3. Create and ACL for that user and click `Allow all operations` so they have full access to the cluster
@@ -23,6 +24,16 @@ go build -buildmode=c-shared -trimpath -o "$traefik_plugin_dir/plugin.wasm" "cmd
 cp ".traefik.yml" "$traefik_plugin_dir/.traefik.yml"
 docker compose up -d --force-recreate 
 ```
+
+6. (Optional) Additional configuration overrides:
+
+```yaml
+   recordRetries: 1
+   updateMetadataBeforeProduce: true
+   forceFlushAfterProduce: true
+```
+
+### After Startup
 
 Open the logs for the traefik container and wait for it to load the plugin and be available (may take a few seconds).
 With the Traefik logs up, make a request to the `whoami` which was also started using:
