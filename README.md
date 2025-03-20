@@ -126,3 +126,8 @@ msg:"retry batches processed","wanted_metadata_update":"true","triggering_metada
 2025-03-20T18:54:43Z DBG github.com/traefik/traefik/v3/pkg/logs/wasm.go:31 > 
 msg:"produced","broker":"11","to":"130451.v1.observability.wasi.log_http_request_event[0{move:11:4@-1,1}]"
 ```
+
+note these logs above have an extra log in them added by me (I forked franz-go) because
+if [moving](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L857) is true, the `err` is never
+logged out, even in debug mode. extra
+log [here](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L851-L855)
