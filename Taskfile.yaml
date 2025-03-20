@@ -19,8 +19,7 @@ tasks:
 
   start:
     cmds:
-      - task: build
       - mkdir -p "{{.TRAEFIK_PLUGIN_DIR}}"
-      - cp "build/{{.PLUGIN_NAME}}.wasm" "{{.TRAEFIK_PLUGIN_DIR}}/plugin.wasm"
+      - go build -buildmode=c-shared -trimpath -o "{{.TRAEFIK_PLUGIN_DIR}}/plugin.wasm" "cmd/wasm/main.go"
       - cp ".traefik.yml" "{{.TRAEFIK_PLUGIN_DIR}}/.traefik.yml"
       - docker compose up -d --force-recreate

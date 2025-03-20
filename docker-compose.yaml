@@ -1,12 +1,4 @@
 services:
-  #  devcontainer:
-  #    image: mcr.microsoft.com/devcontainers/base:debian
-  #    volumes:
-  #      - ..:/workspaces:cached
-  #    networks:
-  #      - net
-  #    command: sleep infinity
-
   traefik:
     image: "traefik"
     container_name: "traefik"

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
@@ -28,14 +29,14 @@ func NewPlugin(cfg *config.Config) (*Plugin, error) {
 	}, nil
 }
 
-func (p *Plugin) HandleRequest(req api.Request, _ api.Response) (bool, uint32) {
+func (p *Plugin) HandleRequest(req api.Request, resp api.Response) (bool, uint32) {
 	if p.disabled {
 		return true, 0
 	}
 
 	body, err := copyBody(req.Body(), true)
 	if err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to copy request body: %s", err.Error()))
+		handleResponseErr(resp, fmt.Sprintf("failed to copy request body: %s", err.Error()))
 		return false, 0
 	}
 
@@ -43,7 +44,7 @@ func (p *Plugin) HandleRequest(req api.Request, _ api.Response) (bool, uint32) {
 		Topic: "request",
 		Value: body,
 	}); err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to produce request record: %s", err.Error()))
+		handleResponseErr(resp, fmt.Sprintf("failed to produce request record: %s", err.Error()))
 		return false, 0
 	}
 
@@ -57,7 +58,7 @@ func (p *Plugin) HandleResponse(_ uint32, _ api.Request, resp api.Response, _ bo
 
 	body, err := copyBody(resp.Body(), false)
 	if err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to copy response body: %s", err.Error()))
+		handleResponseErr(resp, fmt.Sprintf("failed to copy response body: %s", err.Error()))
 		return
 	}
 
@@ -65,7 +66,7 @@ func (p *Plugin) HandleResponse(_ uint32, _ api.Request, resp api.Response, _ bo
 		Topic: "response",
 		Value: body,
 	}); err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to produce response record: %s", err.Error()))
+		handleResponseErr(resp, fmt.Sprintf("failed to produce response record: %s", err.Error()))
 		return
 	}
 }
@@ -83,4 +84,10 @@ func copyBody(body api.Body, writeBackBody bool) ([]byte, error) {
 	}
 
 	return bs, nil
+}
+
+func handleResponseErr(resp api.Response, errStr string) {
+	resp.SetStatusCode(http.StatusInternalServerError)
+	resp.Body().WriteString(errStr)
+	handler.Host.Log(api.LogLevelError, errStr)
 }
