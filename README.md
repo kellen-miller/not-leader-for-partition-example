@@ -20,7 +20,7 @@ WASM runtime.
 traefik_plugin_dir="traefik/plugins-local/src/publisher-plugin"
 
 mkdir -p "$traefik_plugin_dir"
-go build -buildmode=c-shared -trimpath -o "$traefik_plugin_dir/plugin.wasm" "cmd/wasm/main.go"
+GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -buildmode=c-shared -trimpath -o "$traefik_plugin_dir/plugin.wasm" "cmd/wasm/main.go"
 cp ".traefik.yml" "$traefik_plugin_dir/.traefik.yml"
 docker compose up -d --force-recreate 
 ```
