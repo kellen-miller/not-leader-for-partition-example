@@ -1,0 +1,6 @@
+displayName: Publisher Middleware
+runtime: wasm
+type: middleware
+summary: "publisher middleware"
+testData:
+  disabled: true

@@ -1,0 +1,19 @@
+log:
+  level: "DEBUG"
+
+experimental:
+  localPlugins:
+    pubPlugin:
+      moduleName: publisher-plugin
+
+api:
+  insecure: true
+  dashboard: true
+
+entryPoints:
+  web:
+    address: :80
+
+providers:
+  file:
+    directory: "/etc/traefik"

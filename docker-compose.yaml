@@ -1,0 +1,38 @@
+services:
+  #  devcontainer:
+  #    image: mcr.microsoft.com/devcontainers/base:debian
+  #    volumes:
+  #      - ..:/workspaces:cached
+  #    networks:
+  #      - net
+  #    command: sleep infinity
+
+  traefik:
+    image: "traefik"
+    container_name: "traefik"
+    hostname: "traefik"
+    networks:
+      - net
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/config:/etc/traefik"
+      - "./traefik/plugins-local:/plugins-local"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "whoami"
+    hostname: "whoami"
+    networks:
+      - net
+    ports:
+      - "4005:80"
+
+networks:
+  net:
+    name: shared_network
+    external: true

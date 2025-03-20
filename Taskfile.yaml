@@ -1,0 +1,26 @@
+version: '3'
+
+env:
+  GOOS: wasip1
+  GOARCH: wasm
+  CGO_ENABLED: 0
+
+vars:
+  PLUGIN_NAME: "publisher-plugin"
+  TRAEFIK_PLUGIN_DIR: "traefik/plugins-local/src/publisher-plugin"
+
+tasks:
+  build:
+    cmds:
+      - mkdir -p build
+      - go build -buildmode=c-shared -trimpath -o "build/{{.PLUGIN_NAME}}.wasm" "cmd/wasm/main.go"
+      - mkdir -p "{{.TRAEFIK_PLUGIN_DIR}}"
+      - cp "build/{{.PLUGIN_NAME}}.wasm" "{{.TRAEFIK_PLUGIN_DIR}}/plugin.wasm"
+
+  start:
+    cmds:
+      - task: build
+      - mkdir -p "{{.TRAEFIK_PLUGIN_DIR}}"
+      - cp "build/{{.PLUGIN_NAME}}.wasm" "{{.TRAEFIK_PLUGIN_DIR}}/plugin.wasm"
+      - cp ".traefik.yml" "{{.TRAEFIK_PLUGIN_DIR}}/.traefik.yml"
+      - docker compose up -d --force-recreate

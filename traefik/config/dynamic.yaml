@@ -1,0 +1,29 @@
+http:
+  routers:
+    whoami-http:
+      rule: "Host(`whoami.docker.localhost`)"
+      entryPoints:
+        - web
+      middlewares:
+        - pub-middleware
+      service: "svc-whoami-http"
+
+  services:
+    svc-whoami-http:
+      loadBalancer:
+        servers:
+          - url: "http://whoami:80"
+
+  middlewares:
+    pub-middleware:
+      plugin:
+        pubPlugin:
+          dnsHost: "127.0.0.11" # Docker's embedded DNS resolver
+          username: "user"
+          password: "itsasecret"
+          brokers:
+            - "broker1:9092"
+          produceTimeout: "10s"
+          recordRetries: "3"
+          updateMetadataBeforeProduce: "false"
+          forceFlushAfterProduce: "false"
