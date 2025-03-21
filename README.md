@@ -36,7 +36,7 @@ docker compose up -d --force-recreate
 ### After Startup
 
 Open the logs for the traefik container and wait for it to load the plugin and be available (may take a few seconds).
-With the Traefik logs up, make a request to the `whoami` which was also started using:
+With the Traefik logs up, make a request to the `whoami` service using:
 
 ```bash
 curl whoami.docker.localhost
