@@ -14,6 +14,14 @@ WASM runtime.
     1. `username`: username of user
     2. `password`: password of user
     3. `brokers`: list of seed brokers (Bootstrap server URL)
+   4. (Optional) Additional overrides:
+
+```yaml
+   recordRetries: 1
+   updateMetadataBeforeProduce: true
+   forceFlushAfterProduce: true
+```
+
 5. Run `task start` or execute the following commands
 
 ```bash
@@ -23,14 +31,6 @@ mkdir -p "$traefik_plugin_dir"
 GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -buildmode=c-shared -trimpath -o "$traefik_plugin_dir/plugin.wasm" "cmd/wasm/main.go"
 cp ".traefik.yml" "$traefik_plugin_dir/.traefik.yml"
 docker compose up -d --force-recreate 
-```
-
-6. (Optional) Additional configuration overrides:
-
-```yaml
-   recordRetries: 1
-   updateMetadataBeforeProduce: true
-   forceFlushAfterProduce: true
 ```
 
 ### After Startup
@@ -95,6 +95,11 @@ msg:"produced","broker":"6","to":"request[0{retrying@-1,1(NOT_LEADER_FOR_PARTITI
 If I try to do the same thing with Confluent Cloud, I will see similar behavior, with an event failure loop looking
 like:
 
+**NOTE**: some logs below have an extra log in them added by me (I forked franz-go) because
+if [moving](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L857) is true, the `err` is never
+logged out, even in debug mode. extra
+log code [here](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L851-L855)
+
 ```text
 2025-03-20T18:54:43Z DBG github.com/traefik/traefik/v3/pkg/logs/wasm.go:31 > 
 msg:"received produce response","err":"NOT_LEADER_FOR_PARTITION: This server is not the leader for that topic-partition.","err_msg":"","err_records":"","recBuf":"", ent
@@ -137,8 +142,3 @@ msg:"retry batches processed","wanted_metadata_update":"true","triggering_metada
 2025-03-20T18:54:43Z DBG github.com/traefik/traefik/v3/pkg/logs/wasm.go:31 > 
 msg:"produced","broker":"11","to":"130451.v1.observability.wasi.log_http_request_event[0{move:11:4@-1,1}]"
 ```
-
-note these logs above have an extra log in them added by me (I forked franz-go) because
-if [moving](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L857) is true, the `err` is never
-logged out, even in debug mode. extra
-log [here](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L851-L855)
