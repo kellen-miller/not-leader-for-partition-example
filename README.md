@@ -1,7 +1,6 @@
 # NOT_LEADER_FOR_PARTITION Sample Code
 
-Code is a sample to reproduce the intermittent produce issues when using franz-go to produce to redpanda from within a
-WASM runtime.
+Code is a sample to reproduce the intermittent produce issues to producing to a cloud kafka server from within a WASM plugin.
 
 ## Reproduction Steps
 
