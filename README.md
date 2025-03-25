@@ -1,6 +1,6 @@
 # NOT_LEADER_FOR_PARTITION Sample Code
 
-Code is a sample to reproduce the intermittent produce issues to producing to a cloud kafka server from within a WASM plugin.
+Code is a sample to reproduce the intermittent produce issues when publishing to a cloud kafka server from within a WASM plugin.
 
 ## Reproduction Steps
 
