@@ -7,12 +7,12 @@ Code is a sample to reproduce the intermittent produce issues when publishing to
 ### Setup
 1. Set up a cluster on Redpanda with SASL/SCRAM and SSL
 2. Create a user with a SASL Mechanism of SCRAM-SHA-256
-3. Create and ACL for that user and click `Allow all operations` so they have full access to the cluster
+3. Create an ACL for that user with `Allow all operations` so they have full access to the cluster
 4. Override the following values in `traefik/config/dynamic.yaml` under the
    `http.middlewares.pub-middleware.plugin.pubPlugin` block:
     1. `username`: username of user
     2. `password`: password of user
-    3. `brokers`: list of seed brokers (Bootstrap server URL)
+    3. `brokers`: list of seed brokers (`Bootstrap server URL` in Redpanda UI)
    4. (Optional) Additional overrides:
 
 ```yaml
@@ -25,7 +25,6 @@ Code is a sample to reproduce the intermittent produce issues when publishing to
 
 ```bash
 traefik_plugin_dir="traefik/plugins-local/src/publisher-plugin"
-
 mkdir -p "$traefik_plugin_dir"
 GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 go build -buildmode=c-shared -trimpath -o "$traefik_plugin_dir/plugin.wasm" "cmd/wasm/main.go"
 cp ".traefik.yml" "$traefik_plugin_dir/.traefik.yml"
@@ -34,7 +33,7 @@ docker compose up -d --force-recreate
 
 ### After Startup
 
-Open the logs for the traefik container and wait for it to load the plugin and be available (may take a few seconds).
+Open the logs for the traefik container and wait for it to load the plugin and Trafeik to be available (may take a few seconds).
 With the Traefik logs up, make a request to the `whoami` service using:
 
 ```bash
@@ -91,8 +90,7 @@ msg:"retry batches processed","wanted_metadata_update":"true","triggering_metada
 msg:"produced","broker":"6","to":"request[0{retrying@-1,1(NOT_LEADER_FOR_PARTITION: This server is not the leader for that topic-partition.)}]"
 ```
 
-If I try to do the same thing with Confluent Cloud, I will see similar behavior, with an event failure loop looking
-like:
+I see similar behavior if I do the same thing with Confluent Cloud.
 
 **NOTE**: some logs below have an extra log in them added by me (I forked franz-go) because
 if [moving](https://github.com/kellen-miller/franz-go/blob/master/pkg/kgo/sink.go#L857) is true, the `err` is never
