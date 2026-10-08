@@ -18,4 +18,4 @@ require (
 )
 
 // necessary for this library to compile using go 1.24, referencing this traefik maintainers PR: https://github.com/http-wasm/http-wasm-guest-tinygo/pull/34
-replace github.com/http-wasm/http-wasm-guest-tinygo => github.com/traefik/http-wasm-guest-tinygo v0.0.0-20240913140402-af96219ffea5
+replace github.com/http-wasm/http-wasm-guest-tinygo => github.com/traefik/http-wasm-guest-tinygo v0.0.0-20231031142937-e57ec90ac6a1
