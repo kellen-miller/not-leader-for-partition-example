@@ -8,12 +8,22 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    uses: kellen-miller/ci/.github/workflows/changed-paths.yaml@f01aacda5b78c7b67d1dc840bd0432be852a69a4
+    with:
+      filters: |
+        {"validation": ["**/*.go", "go.mod", "go.sum", "go.work", "go.work.sum", "cmd/**", "internal/**", "Taskfile.y*ml", ".go-version", ".tool-versions", ".github/workflows/**", ".github/actions/**"]}
+
   build:
+    needs: changes
+    if: >-
+      ${{ !cancelled() && (needs.changes.result != 'success' ||
+          fromJSON(needs.changes.outputs.changes).validation) }}
     runs-on: ubuntu-latest
     env:
       GOOS: wasip1
       GOARCH: wasm
-      CGO_ENABLED: '0'
+      CGO_ENABLED: "0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
