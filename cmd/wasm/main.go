@@ -21,6 +21,7 @@ import (
 
 func main() {}
 
+//nolint:gochecknoinits // WASI loads this c-shared module without calling main, so init registers its callbacks.
 func init() {
 	cfg, err := plugin.HydrateFromHostConfig[*config.Config](handler.Host.GetConfig())
 	if err != nil {
