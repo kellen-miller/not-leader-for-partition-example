@@ -9,12 +9,13 @@ import (
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler"
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
 	"github.com/twmb/franz-go/pkg/kgo"
+
 	"not-leader-for-partition-example/config"
 )
 
 type Plugin struct {
-	disabled bool
 	producer *Producer
+	disabled bool
 }
 
 func NewPlugin(cfg *config.Config) (*Plugin, error) {
@@ -36,15 +37,16 @@ func (p *Plugin) HandleRequest(req api.Request, resp api.Response) (bool, uint32
 
 	body, err := copyBody(req.Body(), true)
 	if err != nil {
-		handleResponseErr(resp, fmt.Sprintf("failed to copy request body: %s", err.Error()))
+		handleResponseErr(resp, fmt.Errorf("failed to copy request body: %w", err))
 		return false, 0
 	}
 
-	if err := p.producer.ProduceSync(context.Background(), &kgo.Record{
+	err = p.producer.ProduceSync(context.Background(), &kgo.Record{
 		Topic: "request",
 		Value: body,
-	}); err != nil {
-		handleResponseErr(resp, fmt.Sprintf("failed to produce request record: %s", err.Error()))
+	})
+	if err != nil {
+		handleResponseErr(resp, fmt.Errorf("failed to produce request record: %w", err))
 		return false, 0
 	}
 
@@ -58,15 +60,16 @@ func (p *Plugin) HandleResponse(_ uint32, _ api.Request, resp api.Response, _ bo
 
 	body, err := copyBody(resp.Body(), false)
 	if err != nil {
-		handleResponseErr(resp, fmt.Sprintf("failed to copy response body: %s", err.Error()))
+		handleResponseErr(resp, fmt.Errorf("failed to copy response body: %w", err))
 		return
 	}
 
-	if err := p.producer.ProduceSync(context.Background(), &kgo.Record{
+	err = p.producer.ProduceSync(context.Background(), &kgo.Record{
 		Topic: "response",
 		Value: body,
-	}); err != nil {
-		handleResponseErr(resp, fmt.Sprintf("failed to produce response record: %s", err.Error()))
+	})
+	if err != nil {
+		handleResponseErr(resp, fmt.Errorf("failed to produce response record: %w", err))
 		return
 	}
 }
@@ -75,7 +78,7 @@ func copyBody(body api.Body, writeBackBody bool) ([]byte, error) {
 	var buf bytes.Buffer
 	_, err := body.WriteTo(&buf)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("write body: %w", err)
 	}
 
 	bs := buf.Bytes()
@@ -86,8 +89,8 @@ func copyBody(body api.Body, writeBackBody bool) ([]byte, error) {
 	return bs, nil
 }
 
-func handleResponseErr(resp api.Response, errStr string) {
+func handleResponseErr(resp api.Response, err error) {
 	resp.SetStatusCode(http.StatusInternalServerError)
-	resp.Body().WriteString(errStr)
-	handler.Host.Log(api.LogLevelError, errStr)
+	resp.Body().WriteString(err.Error())
+	handler.Host.Log(api.LogLevelError, err.Error())
 }

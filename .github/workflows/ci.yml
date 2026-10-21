@@ -38,9 +38,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: kellen-miller/ci/.github/actions/go-lint@9478f2f23f217048a86cb1916fb78b312f20afa7
+      - uses: kellen-miller/ci/.github/actions/go-lint@bb9e8b967b3ba45047b911c1f23ccec7ce2c1732
         with:
           go-version-file: go.mod
+          vulnerability-check: 'false'
+      - name: Test host config loading
+        run: env -u GOOS -u GOARCH -u CGO_ENABLED go test ./internal/plugin/config_loader.go ./internal/plugin/config_loader_test.go
+      - name: Install govulncheck for the runner
+        run: env -u GOOS -u GOARCH -u CGO_ENABLED go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      - name: Check Go vulnerabilities
+        run: govulncheck ./...
 
   build:
     needs: changes

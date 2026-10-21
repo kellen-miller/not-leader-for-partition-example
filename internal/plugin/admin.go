@@ -1,6 +1,9 @@
 package plugin
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 func (p *Producer) upsertTopics(ctx context.Context, topic string) error {
 	if p.knownTopics.Has(topic) {
@@ -15,8 +18,9 @@ func (p *Producer) upsertTopics(ctx context.Context, topic string) error {
 		return nil
 	}
 
-	if _, err := p.adminClient.CreateTopics(ctx, 1, 3, nil, topic); err != nil {
-		return err
+	_, err := p.adminClient.CreateTopics(ctx, defaultTopicPartitions, defaultTopicReplicationFactor, nil, topic)
+	if err != nil {
+		return fmt.Errorf("create topic %q: %w", topic, err)
 	}
 
 	return p.updateLocalTopics(ctx)
@@ -25,7 +29,7 @@ func (p *Producer) upsertTopics(ctx context.Context, topic string) error {
 func (p *Producer) updateLocalTopics(ctx context.Context) error {
 	topics, err := p.adminClient.ListTopics(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("list Kafka topics: %w", err)
 	}
 
 	p.knownTopics = topics
