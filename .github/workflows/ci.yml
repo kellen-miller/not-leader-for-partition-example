@@ -23,6 +23,25 @@ jobs:
           filters: |
             {"validation": ["**/*.go", "go.mod", "go.sum", "go.work", "go.work.sum", "cmd/**", "internal/**", "Taskfile.y*ml", ".go-version", ".tool-versions", ".github/workflows/**", ".github/actions/**"]}
 
+  go-lint:
+    needs: changes
+    if: >-
+      ${{ !cancelled() && (needs.changes.result != 'success' ||
+          fromJSON(needs.changes.outputs.changes).validation) }}
+    name: Go lint
+    runs-on: ubuntu-latest
+    env:
+      GOOS: wasip1
+      GOARCH: wasm
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: kellen-miller/ci/.github/actions/go-lint@9478f2f23f217048a86cb1916fb78b312f20afa7
+        with:
+          go-version-file: go.mod
+
   build:
     needs: changes
     if: >-

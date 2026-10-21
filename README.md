@@ -139,3 +139,10 @@ msg:"retry batches processed","wanted_metadata_update":"true","triggering_metada
 2025-03-20T18:54:43Z DBG github.com/traefik/traefik/v3/pkg/logs/wasm.go:31 > 
 msg:"produced","broker":"11","to":"130451.v1.observability.wasi.log_http_request_event[0{move:11:4@-1,1}]"
 ```
+
+## Development checks
+
+Go lint and formatting run in pull-request CI through
+`kellen-miller/ci/.github/actions/go-lint` pinned to
+`9478f2f23f217048a86cb1916fb78b312f20afa7`, using its bundled policy.
+The lint job uses the same `wasip1/wasm` target as the existing build.
