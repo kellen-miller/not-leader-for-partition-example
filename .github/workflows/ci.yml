@@ -18,10 +18,36 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - id: paths
-        uses: kellen-miller/ci/.github/actions/changed-paths@75c70f9d5db7117810669e0af01fd2eafdc396c6
+        uses: kellen-miller/ci/.github/actions/changed-paths@6d83b6c0e8b6f407fa2f11e1c974449649cfa1f6
         with:
           filters: |
             {"validation": ["**/*.go", "go.mod", "go.sum", "go.work", "go.work.sum", "cmd/**", "internal/**", "Taskfile.y*ml", ".go-version", ".tool-versions", ".github/workflows/**", ".github/actions/**"]}
+
+  go-lint:
+    needs: changes
+    if: >-
+      ${{ !cancelled() && (needs.changes.result != 'success' ||
+          fromJSON(needs.changes.outputs.changes).validation) }}
+    name: Go lint
+    runs-on: ubuntu-latest
+    env:
+      GOOS: wasip1
+      GOARCH: wasm
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: kellen-miller/ci/.github/actions/go-lint@6d83b6c0e8b6f407fa2f11e1c974449649cfa1f6
+        with:
+          go-version-file: go.mod
+          vulnerability-check: 'false'
+      - name: Test host config loading
+        run: env -u GOOS -u GOARCH -u CGO_ENABLED go test ./internal/plugin/config_loader.go ./internal/plugin/config_loader_test.go
+      - name: Install govulncheck for the runner
+        run: env -u GOOS -u GOARCH -u CGO_ENABLED go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      - name: Check Go vulnerabilities
+        run: govulncheck ./...
 
   build:
     needs: changes

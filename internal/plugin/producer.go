@@ -11,7 +11,13 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+
 	"not-leader-for-partition-example/config"
+)
+
+const (
+	defaultTopicPartitions        int32 = 1
+	defaultTopicReplicationFactor int16 = 3
 )
 
 type Producer struct {
@@ -56,7 +62,7 @@ func NewProducer(cfg *config.Config) (*Producer, error) {
 
 	cli, err := kgo.NewClient(opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create Kafka client: %w", err)
 	}
 
 	return &Producer{
@@ -82,12 +88,16 @@ func (p *Producer) ProduceSync(ctx context.Context, record *kgo.Record) error {
 	}
 
 	if err := p.client.ProduceSync(producectx, record).FirstErr(); err != nil {
-		return err
+		return fmt.Errorf("produce record: %w", err)
 	}
 
 	if !p.forceFlushAfterProduce {
 		return nil
 	}
 
-	return p.client.Flush(ctx)
+	if err := p.client.Flush(ctx); err != nil {
+		return fmt.Errorf("flush Kafka producer: %w", err)
+	}
+
+	return nil
 }

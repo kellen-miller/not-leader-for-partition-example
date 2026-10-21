@@ -19,7 +19,7 @@ func HydrateFromHostConfig[T any](data json.RawMessage) (T, error) {
 		raw map[string]any
 	)
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return out, err
+		return out, fmt.Errorf("decode host config: %w", err)
 	}
 
 	if err := setValue(raw, reflect.ValueOf(&out).Elem()); err != nil {
@@ -31,7 +31,7 @@ func HydrateFromHostConfig[T any](data json.RawMessage) (T, error) {
 
 // setValue recursively assigns a raw JSON value (from the decoded map) to dest.
 func setValue(raw any, dest reflect.Value) error {
-	if dest.Kind() == reflect.Ptr {
+	if dest.Kind() == reflect.Pointer {
 		if dest.IsNil() {
 			dest.Set(reflect.New(dest.Type().Elem()))
 		}
@@ -54,10 +54,10 @@ func setValue(raw any, dest reflect.Value) error {
 }
 
 func setStruct(raw any, dest reflect.Value) error {
-	if dest.Type() == reflect.TypeOf(time.Time{}) {
+	if dest.Type() == reflect.TypeFor[time.Time]() {
 		t, err := cast.ToTimeE(raw)
 		if err != nil {
-			return err
+			return fmt.Errorf("convert value to time: %w", err)
 		}
 
 		dest.Set(reflect.ValueOf(t))
@@ -110,7 +110,7 @@ func getFieldRaw(field *reflect.StructField, rawMap map[string]any) (any, bool) 
 	}
 
 	if jsonKey := field.Tag.Get("json"); jsonKey != "" && jsonKey != "-" {
-		keysToTry = append(keysToTry, jsonKey)
+		keysToTry = append(keysToTry, jsonKey, camelCaseJSONKey(jsonKey))
 	}
 
 	if len(field.Name) > 1 {
@@ -124,6 +124,19 @@ func getFieldRaw(field *reflect.StructField, rawMap map[string]any) (any, bool) 
 	}
 
 	return nil, false
+}
+
+func camelCaseJSONKey(key string) string {
+	parts := strings.Split(key, "_")
+	for i := 1; i < len(parts); i++ {
+		if parts[i] == "" {
+			continue
+		}
+
+		parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+	}
+
+	return strings.Join(parts, "")
 }
 
 func setSlice(raw any, dest reflect.Value) error {
@@ -210,7 +223,7 @@ func setPrimitive(raw any, dest reflect.Value) error {
 	case reflect.Int32:
 		converted, err = cast.ToInt32E(raw)
 	case reflect.Int64:
-		if dest.Type() == reflect.TypeOf(time.Duration(0)) {
+		if dest.Type() == reflect.TypeFor[time.Duration]() {
 			converted, err = cast.ToDurationE(raw)
 			break
 		}

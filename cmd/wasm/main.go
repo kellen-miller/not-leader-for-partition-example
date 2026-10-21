@@ -13,13 +13,15 @@ import (
 	"github.com/http-wasm/http-wasm-guest-tinygo/handler/api"
 	_ "github.com/stealthrocket/net/http"
 	"github.com/stealthrocket/net/wasip1"
+	_ "golang.org/x/crypto/x509roots/fallback"
+
 	"not-leader-for-partition-example/config"
 	"not-leader-for-partition-example/internal/plugin"
 )
 
 func main() {}
 
-//nolint:gochecknoinits // this is the only way to initialize the plugin in the wasm runtime
+//nolint:gochecknoinits // WASI loads this c-shared module without calling main, so init registers its callbacks.
 func init() {
 	cfg, err := plugin.HydrateFromHostConfig[*config.Config](handler.Host.GetConfig())
 	if err != nil {
@@ -39,7 +41,7 @@ func init() {
 
 	plug, err := plugin.NewPlugin(cfg)
 	if err != nil {
-		handler.Host.Log(api.LogLevelError, fmt.Sprintf("Could not initialize plugin: %s", err.Error()))
+		handler.Host.Log(api.LogLevelError, "Could not initialize plugin: "+err.Error())
 		os.Exit(1)
 	}
 
@@ -47,14 +49,15 @@ func init() {
 	handler.HandleResponseFn = plug.HandleResponse
 }
 
+// SetDefaultHTTPTransport uses the embedded fallback roots because WASI has no system certificate store.
 func SetDefaultHTTPTransport() {
 	if defaultTransport, ok := http.DefaultTransport.(*http.Transport); ok {
 		defaultTransport.DialContext = wasip1.DialContext
-		defaultTransport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true, //nolint:gosec // ignoring G402 (CWE-295): Because there is no file mounted in the plugin by default, we configure insecureSkipVerify to avoid having to load rootCas
-		}
+		defaultTransport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
 }
+
+const defaultDNSTimeout = 10 * time.Second
 
 func SetDefaultDNSResolver(host string) {
 	// Because there is no file mounted in the wasm binary by default, the default dns resolver needs to be configured
@@ -62,7 +65,7 @@ func SetDefaultDNSResolver(host string) {
 		PreferGo: true,
 		Dial: func(ctx context.Context, _ string, _ string) (net.Conn, error) {
 			return (&wasip1.Dialer{
-				Timeout: 10 * time.Second,
+				Timeout: defaultDNSTimeout,
 			}).DialContext(ctx, "udp", net.JoinHostPort(host, "53"))
 		},
 	}

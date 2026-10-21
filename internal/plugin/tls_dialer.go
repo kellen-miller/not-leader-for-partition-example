@@ -29,8 +29,11 @@ type TLSDialer struct {
 }
 
 func NewTLSDialer(config *tls.Config, opts ...Option) (*TLSDialer, error) {
-	if !config.InsecureSkipVerify && (config.MinVersion == 0 || (config.MaxVersion != 0 && config.MaxVersion < config.MinVersion)) {
-		return nil, errors.New("insecure configuration of TLS connection settings (G402, CWE-295): see https://deepsource.com/directory/go/issues/GSC-G402 for details")
+	if !config.InsecureSkipVerify &&
+		(config.MinVersion == 0 || (config.MaxVersion != 0 && config.MaxVersion < config.MinVersion)) {
+		return nil, errors.New(
+			"insecure configuration of TLS connection settings (G402, CWE-295): see https://deepsource.com/directory/go/issues/GSC-G402 for details",
+		)
 	}
 
 	for _, opt := range opts {
@@ -45,7 +48,7 @@ func NewTLSDialer(config *tls.Config, opts ...Option) (*TLSDialer, error) {
 func (d *TLSDialer) DialContext(ctx context.Context, network string, address string) (net.Conn, error) {
 	conn, err := wasip1.DialContext(ctx, network, address)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("dial %s: %w", address, err)
 	}
 
 	// one of InsecureSkipVerify or ServerName must be set, otherwise the connection will fail. If InsecureSkipVerify
@@ -60,10 +63,10 @@ func (d *TLSDialer) DialContext(ctx context.Context, network string, address str
 	tlsConn := tls.Client(conn, d.config)
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		if err := conn.Close(); err != nil {
-			handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to close connection: %s", err.Error()))
+			handler.Host.Log(api.LogLevelError, "failed to close connection: "+err.Error())
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("TLS handshake with %s: %w", address, err)
 	}
 
 	return tlsConn, nil
@@ -85,7 +88,7 @@ func WithRootCAsPEMFromURL(url string) Option {
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				handler.Host.Log(api.LogLevelError, fmt.Sprintf("failed to close response body: %s", err.Error()))
+				handler.Host.Log(api.LogLevelError, "failed to close response body: "+err.Error())
 			}
 		}()
 
